@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jerry Chen — Game Designer</title>
+<meta name="description" content="Jerry Chen — game design student at ASU. A playable portfolio built out of triangles.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800;900&family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3 L30 28 H2 Z' fill='%23ffcf3f'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#0a0c16;
+  --panel:rgba(16,19,38,.78);
+  --panel-solid:#12152a;
+  --line:rgba(140,150,210,.16);
+  --ink:#eef0ff;
+  --muted:#9097c2;
+  --gold:#ffcf3f;
+  --mint:#4df0c4;
+  --coral:#ff5d73;
+  --violet:#9b7bff;
+  --radius:14px;
+  --display:'Unbounded',system-ui,sans-serif;
+  --mono:'Space Mono',ui-monospace,monospace;
+  --body:'Outfit',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6;overflow-x:hidden;min-height:100vh}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+::selection{background:var(--gold);color:#111}
+:focus-visible{outline:2px solid var(--mint);outline-offset:3px;border-radius:6px}
+.mono{font-family:var(--mono)}
+
+/* ---------- background mesh ---------- */
+#mesh{position:fixed;inset:0;z-index:0;display:block}
+.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 40%,transparent 30%,rgba(5,6,12,.75) 100%)}
+main,header.hud,footer{position:relative;z-index:2}
+
+/* ---------- boot screen ---------- */
+#boot{position:fixed;inset:0;z-index:100;background:#05060c;display:grid;place-items:center;text-align:center;cursor:pointer;transition:opacity .6s ease,visibility .6s}
+#boot.gone{opacity:0;visibility:hidden}
+#boot .studio{font-family:var(--mono);color:var(--muted);letter-spacing:.4em;font-size:12px;text-transform:uppercase;opacity:0;animation:fadeUp .8s .2s forwards}
+#boot .logo{width:110px;height:110px;margin:28px auto;opacity:0;animation:fadeUp .8s .6s forwards}
+#boot .logo path{stroke-dasharray:400;stroke-dashoffset:400;animation:draw 1.6s .7s forwards ease}
+#boot .title{font-family:var(--display);font-weight:900;font-size:clamp(32px,7vw,72px);letter-spacing:-.02em;opacity:0;animation:fadeUp .8s 1.1s forwards}
+#boot .press{margin-top:36px;font-family:var(--mono);font-size:14px;letter-spacing:.3em;color:var(--gold);opacity:0;animation:fadeUp .6s 1.7s forwards,blink 1.1s 2.3s infinite steps(2)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes blink{50%{opacity:.15}}
+
+/* ---------- HUD ---------- */
+header.hud{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;gap:16px;padding:12px 20px;
+  background:linear-gradient(to bottom,rgba(10,12,22,.92),rgba(10,12,22,.6));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-family:var(--display);font-weight:800;font-size:15px;flex-shrink:0}
+.brand svg{width:26px;height:26px;transition:transform .5s cubic-bezier(.3,1.6,.5,1)}
+.brand:hover svg{transform:rotate(120deg)}
+nav.menu{display:flex;gap:4px;margin:0 auto;overflow-x:auto;scrollbar-width:none}
+nav.menu::-webkit-scrollbar{display:none}
+nav.menu a{font-family:var(--mono);font-size:12px;text-decoration:none;color:var(--muted);padding:6px 10px;border-radius:8px;white-space:nowrap;transition:color .2s,background .2s}
+nav.menu a span{color:var(--gold);opacity:.6;margin-right:4px}
+nav.menu a:hover,nav.menu a.active{color:var(--ink);background:rgba(255,255,255,.06)}
+nav.menu a.active span{opacity:1}
+.hud-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.xp{display:flex;flex-direction:column;gap:3px;width:120px}
+.xp-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted)}
+.xp-label b{color:var(--gold)}
+.xp-bar{height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}
+.xp-fill{height:100%;width:0;background:linear-gradient(90deg,var(--mint),var(--gold));transition:width .2s}
+.hud-btn{font-family:var(--mono);font-size:11px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;color:var(--muted);display:flex;align-items:center;gap:6px;transition:border-color .2s,color .2s}
+.hud-btn:hover{color:var(--ink);border-color:var(--muted)}
+.hud-btn svg{width:14px;height:14px}
+.hud-btn.on{color:var(--mint);border-color:rgba(77,240,196,.5)}
+
+/* ---------- layout ---------- */
+section{padding:110px 20px 40px;max-width:1120px;margin:0 auto}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:28px;flex-wrap:wrap}
+.sec-head .num{font-family:var(--mono);color:var(--gold);font-size:13px}
+.sec-head h2{font-family:var(--display);font-weight:800;font-size:clamp(26px,4vw,40px);letter-spacing:-.02em;line-height:1.1}
+.sec-head p{color:var(--muted);font-family:var(--mono);font-size:13px;flex-basis:100%}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+
+/* ---------- hero ---------- */
+#start{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding-top:90px}
+.tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--mint);border:1px solid rgba(77,240,196,.35);padding:5px 12px;border-radius:99px;width:max-content;max-width:100%}
+.tag i{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px var(--mint);animation:blink 1.6s infinite}
+.big-name{font-family:var(--display);font-weight:900;font-size:clamp(56px,14vw,170px);line-height:.9;letter-spacing:-.04em;margin:22px 0 18px;user-select:none}
+.big-name .row{display:block;white-space:nowrap}
+.big-name .ltr{display:inline-block;transition:transform .35s cubic-bezier(.3,1.8,.5,1),color .3s;cursor:default;animation:drop .8s backwards cubic-bezier(.2,1.4,.4,1);animation-delay:calc(var(--i)*60ms + .1s)}
+.big-name .ltr:hover{transform:translateY(-.08em) rotate(-6deg);color:var(--gold)}
+.big-name .ltr.spin{animation:spin .7s cubic-bezier(.3,1.4,.5,1)}
+.big-name .row:last-child{color:var(--gold)}
+.big-name .row:last-child .ltr:hover{color:var(--coral)}
+body.booting .big-name .ltr,body.booting .tag,body.booting .role{animation-play-state:paused}
+@keyframes drop{from{opacity:0;transform:translateY(-60px) rotate(12deg)}}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.role{font-family:var(--mono);font-size:clamp(15px,2.2vw,20px);color:var(--muted);min-height:1.6em}
+.role b{color:var(--ink);font-weight:700}
+.role .caret{display:inline-block;width:.55em;height:1.1em;background:var(--gold);vertical-align:-.18em;margin-left:2px;animation:blink 1s infinite steps(2)}
+.hero-actions{display:flex;gap:14px;margin-top:38px;flex-wrap:wrap;align-items:center}
+.btn{font-family:var(--display);font-weight:600;font-size:15px;padding:14px 26px;border-radius:12px;display:inline-flex;align-items:center;gap:10px;text-decoration:none;transition:transform .2s,box-shadow .2s,background .2s}
+.btn-play{background:var(--mint);color:#06231a;box-shadow:0 0 0 0 rgba(77,240,196,.5)}
+.btn-play:hover{transform:translateY(-2px);box-shadow:0 10px 30px -8px rgba(77,240,196,.7)}
+.btn-quit{border:1.5px solid var(--coral);color:var(--coral);transition:transform .25s cubic-bezier(.3,1.6,.5,1),background .2s}
+.btn-quit:hover{background:rgba(255,93,115,.1)}
+.btn-quit.shake{animation:shake .4s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.hint{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:46px;display:flex;gap:18px;flex-wrap:wrap}
+.hint kbd{font-family:var(--mono);border:1px solid var(--line);border-bottom-width:2px;padding:1px 6px;border-radius:5px;color:var(--ink);font-size:11px}
+
+/* ---------- character sheet ---------- */
+.sheet{display:grid;grid-template-columns:1.1fr 1fr;gap:20px}
+.card-pad{padding:26px}
+.char-top{display:flex;gap:20px;align-items:center;margin-bottom:20px}
+.avatar{width:92px;height:92px;flex-shrink:0;border-radius:16px;background:var(--panel-solid);border:1px solid var(--line);display:grid;place-items:center;overflow:hidden}
+.avatar canvas{width:100%;height:100%}
+.char-top h3{font-family:var(--display);font-size:22px;line-height:1.2}
+.char-meta{font-family:var(--mono);font-size:12px;color:var(--muted);display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin-top:6px}
+.char-meta b{color:var(--gold);font-weight:400}
+.bio{color:#c9cdf0;margin-bottom:18px}
+.bio em{color:var(--gold);font-style:normal}
+.stat{display:grid;grid-template-columns:96px 1fr 34px;align-items:center;gap:12px;font-family:var(--mono);font-size:12px;margin:9px 0}
+.stat .bar{height:10px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;position:relative}
+.stat .bar i{position:absolute;inset:0;width:0;background:repeating-linear-gradient(90deg,var(--c) 0 10px,transparent 10px 12px);transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.stat .val{text-align:right;color:var(--muted)}
+.perk-title{font-family:var(--mono);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.15em;margin:22px 0 10px}
+.perks{display:grid;gap:10px}
+.perk{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02)}
+.perk .ico{width:30px;height:30px;flex-shrink:0;display:grid;place-items:center;border-radius:8px;background:rgba(255,207,63,.12);color:var(--gold);font-family:var(--mono);font-weight:700;font-size:13px}
+.perk h4{font-family:var(--display);font-size:13px;font-weight:600}
+.perk p{font-size:14px;color:var(--muted);line-height:1.4}
+.party{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.member{padding:14px 12px;border:1px solid var(--line);border-radius:10px;text-align:center;transition:transform .25s,border-color .25s;background:rgba(255,255,255,.02)}
+.member:hover{transform:translateY(-4px);border-color:var(--c)}
+.member .glyph{font-family:var(--display);font-weight:900;font-size:24px;color:var(--c)}
+.member h4{font-size:13px;font-weight:600;margin-top:4px;line-height:1.25}
+.member p{font-size:12px;color:var(--muted);line-height:1.35;margin-top:4px;font-style:italic}
+
+/* ---------- levels ---------- */
+.filters{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.chip{font-family:var(--mono);font-size:12px;padding:7px 14px;border-radius:99px;border:1px solid var(--line);color:var(--muted);transition:all .2s}
+.chip:hover{color:var(--ink)}
+.chip.on{background:var(--gold);color:#1a1405;border-color:var(--gold)}
+.levels{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
+.level{position:relative;text-align:left;border-radius:var(--radius);overflow:hidden;background:var(--panel);border:1px solid var(--line);transform-style:preserve-3d;transition:transform .15s ease-out,border-color .25s,opacity .3s;will-change:transform;display:flex;flex-direction:column}
+.level:hover{border-color:rgba(255,207,63,.5)}
+.level.hide{display:none}
+.level .thumb{aspect-ratio:16/10;background:#0e1124;position:relative;overflow:hidden}
+.level .thumb img,.level .thumb canvas{width:100%;height:100%;object-fit:cover;display:block;image-rendering:pixelated}
+.level .glare{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--gx,50%) var(--gy,50%),rgba(255,255,255,.18),transparent 55%);opacity:0;transition:opacity .2s}
+.level:hover .glare{opacity:1}
+.level .lvl-no{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:11px;background:rgba(5,6,12,.75);padding:3px 8px;border-radius:6px;color:var(--gold)}
+.level .body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:8px;flex:1}
+.level h3{font-family:var(--display);font-size:17px;font-weight:600;line-height:1.25}
+.level p{font-size:14px;color:var(--muted);line-height:1.45}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:6px}
+.tags span{font-family:var(--mono);font-size:10.5px;padding:2px 8px;border-radius:5px;background:rgba(155,123,255,.14);color:#c5b6ff}
+.diff{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.diff b{color:var(--gold);letter-spacing:2px}
+.level.locked{cursor:not-allowed}
+.level.locked .thumb{display:grid;place-items:center;background:repeating-linear-gradient(45deg,#0e1124 0 12px,#121631 12px 24px)}
+.level.locked .thumb svg{width:48px;height:48px;color:var(--muted)}
+.level.locked h3,.level.locked p{opacity:.6}
+
+/* ---------- inventory ---------- */
+.inv-wrap{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+.inventory{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;padding:18px}
+.slot{aspect-ratio:1;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.025);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;position:relative;transition:transform .2s,border-color .2s,background .2s}
+.slot .g{font-family:var(--display);font-weight:800;font-size:22px;color:var(--rc)}
+.slot .n{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:center;padding:0 4px;line-height:1.2}
+.slot::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 -3px 0 var(--rc);opacity:.7}
+.slot:hover,.slot:focus-visible,.slot.sel{transform:translateY(-3px);border-color:var(--rc);background:rgba(255,255,255,.06)}
+.slot.empty{border-style:dashed}
+.slot.empty::after{display:none}
+.slot.empty .g{color:rgba(255,255,255,.12)}
+.inspect{padding:22px;position:sticky;top:96px;min-height:240px}
+.inspect .rar{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:var(--rc,var(--muted))}
+.inspect h3{font-family:var(--display);font-size:22px;margin:6px 0 10px;line-height:1.2}
+.inspect p{font-size:15px;color:#c9cdf0}
+.inspect .effect{margin-top:14px;font-family:var(--mono);font-size:12px;color:var(--mint)}
+.inspect .placeholder{color:var(--muted);font-family:var(--mono);font-size:13px}
+
+/* ---------- quest log ---------- */
+.quests{position:relative;padding-left:34px}
+.quests::before{content:"";position:absolute;left:11px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--gold),var(--violet) 60%,transparent)}
+.quest{position:relative;margin-bottom:16px;padding:16px 20px}
+.quest::before{content:"";position:absolute;left:-30px;top:20px;width:14px;height:14px;transform:rotate(45deg);background:var(--bg);border:2px solid var(--gold)}
+.quest.done::before{background:var(--gold)}
+.quest.todo::before{border-color:var(--muted)}
+.quest.todo{opacity:.55}
+.quest-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.quest h3{font-family:var(--display);font-size:16px;font-weight:600}
+.quest .when{font-family:var(--mono);font-size:12px;color:var(--gold)}
+.quest p{color:var(--muted);font-size:14px;margin-top:4px}
+.quest .links{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap}
+.quest .links a{font-family:var(--mono);font-size:12px;color:var(--mint);text-decoration:none}
+.quest .links a:hover{text-decoration:underline}
+
+/* ---------- bonus stage ---------- */
+.stage{position:relative;overflow:hidden;padding:0}
+#game{display:block;width:100%;height:420px;touch-action:none;cursor:crosshair}
+.stage-hud{position:absolute;top:12px;left:16px;right:16px;display:flex;justify-content:space-between;font-family:var(--mono);font-size:13px;pointer-events:none}
+.stage-hud b{color:var(--gold)}
+.stage-overlay{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:rgba(8,10,20,.72);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);transition:opacity .3s}
+.stage-overlay.hidden{opacity:0;pointer-events:none}
+.stage-overlay h3{font-family:var(--display);font-size:clamp(22px,4vw,34px);margin-bottom:8px}
+.stage-overlay p{color:var(--muted);font-size:14px;margin-bottom:18px;padding:0 16px}
+.legend{display:flex;gap:18px;justify-content:center;font-family:var(--mono);font-size:12px;margin-bottom:22px;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid var(--c)}
+
+/* ---------- contact ---------- */
+.coop{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.coop h3{font-family:var(--display);font-size:clamp(24px,3.4vw,34px);line-height:1.15;margin-bottom:14px}
+.coop h3 span{color:var(--gold)}
+.coop .lead{color:var(--muted);margin-bottom:22px}
+.contact-row{display:flex;gap:10px;flex-wrap:wrap}
+.copy{font-family:var(--mono);font-size:14px;padding:12px 16px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;gap:10px;transition:border-color .2s}
+.copy:hover{border-color:var(--gold)}
+.copy small{color:var(--muted);font-size:11px}
+form.msg{display:grid;gap:12px}
+form.msg label{font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;display:grid;gap:6px}
+form.msg input,form.msg textarea{font:inherit;font-size:15px;color:var(--ink);background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:11px 13px;resize:vertical;transition:border-color .2s}
+form.msg input:focus,form.msg textarea:focus{outline:none;border-color:var(--mint)}
+
+footer{text-align:center;padding:60px 20px 40px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+footer .secret{opacity:.5;margin-top:6px}
+
+/* ---------- toasts ---------- */
+#toasts{position:fixed;right:18px;bottom:18px;z-index:60;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:calc(100vw - 36px)}
+.toast{display:flex;align-items:center;gap:12px;background:var(--panel-solid);border:1px solid rgba(255,207,63,.45);border-radius:12px;padding:12px 16px 12px 12px;box-shadow:0 14px 40px -10px rgba(0,0,0,.7);animation:toastIn .45s cubic-bezier(.2,1.4,.4,1);min-width:260px}
+.toast.out{animation:toastOut .35s forwards}
+.toast .medal{width:40px;height:40px;flex-shrink:0;display:grid;place-items:center;border-radius:10px;background:linear-gradient(135deg,var(--gold),#ff9d3f);color:#1a1405}
+.toast .medal svg{width:22px;height:22px}
+.toast small{font-family:var(--mono);font-size:10px;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;display:block}
+.toast b{font-family:var(--display);font-size:14px;font-weight:600;display:block}
+.toast span{font-size:12px;color:var(--muted)}
+.toast.info{border-color:rgba(77,240,196,.45)}
+.toast.info .medal{background:linear-gradient(135deg,var(--mint),#3fb6ff)}
+.toast.info small{color:var(--mint)}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px) scale(.95)}}
+@keyframes toastOut{to{opacity:0;transform:translateX(40px)}}
+
+/* ---------- dialogs ---------- */
+dialog{margin:auto;border:1px solid var(--line);border-radius:18px;background:var(--panel-solid);color:var(--ink);width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 48px);padding:0;box-shadow:0 30px 80px -20px rgba(0,0,0,.9)}
+dialog::backdrop{background:rgba(4,5,10,.7);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+dialog[open]{animation:pop .3s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{opacity:0;transform:scale(.94)}}
+.dlg-head{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line)}
+.dlg-head h3{font-family:var(--display);font-size:18px}
+.dlg-x{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:var(--muted)}
+.dlg-x:hover{background:rgba(255,255,255,.06);color:var(--ink)}
+.dlg-body{padding:20px 22px 24px}
+.brief-img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;margin-bottom:16px;background:#0e1124;image-rendering:pixelated;display:block}
+.brief-meta{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-family:var(--mono);font-size:12px;margin:14px 0 18px}
+.brief-meta dt{color:var(--muted)}
+.brief-meta dd{color:var(--ink)}
+.ach-list{display:grid;gap:10px}
+.ach{display:flex;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
+.ach .medal{width:36px;height:36px;flex-shrink:0;border-radius:9px;display:grid;place-items:center;background:rgba(255,255,255,.05);color:var(--muted)}
+.ach .medal svg{width:18px;height:18px}
+.ach.got{border-color:rgba(255,207,63,.4)}
+.ach.got .medal{background:linear-gradient(135deg,var(--gold),#ff9d3f);color:#1a1405}
+.ach b{font-family:var(--display);font-size:13px;font-weight:600;display:block}
+.ach span{font-size:13px;color:var(--muted)}
+.ach-progress{font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:14px}
+.ach-progress .xp-bar{margin-top:6px;height:8px}
+
+/* ---------- console ---------- */
+#console{position:fixed;left:50%;bottom:20px;transform:translate(-50%,20px);width:min(680px,calc(100vw - 32px));z-index:70;background:rgba(6,8,16,.96);border:1px solid rgba(77,240,196,.4);border-radius:12px;font-family:var(--mono);font-size:13px;opacity:0;visibility:hidden;transition:all .25s;box-shadow:0 20px 60px -10px rgba(0,0,0,.8)}
+#console.open{opacity:1;visibility:visible;transform:translate(-50%,0)}
+.con-head{display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--line);color:var(--muted);font-size:11px}
+#con-out{max-height:240px;overflow-y:auto;padding:12px 14px;white-space:pre-wrap;color:#b8f5e3;line-height:1.5}
+#con-out .err{color:var(--coral)}
+#con-out .me{color:var(--muted)}
+.con-in{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--line);align-items:center}
+.con-in span{color:var(--gold)}
+.con-in input{flex:1;background:none;border:0;color:var(--ink);font:inherit;outline:none}
+
+/* ---------- cursor follower ---------- */
+#reticle{position:fixed;left:0;top:0;width:28px;height:28px;margin:-14px 0 0 -14px;pointer-events:none;z-index:90;opacity:0;transition:opacity .3s,width .2s,height .2s;color:var(--gold)}
+#reticle svg{width:100%;height:100%;transition:transform .3s}
+#reticle.hot svg{transform:rotate(60deg) scale(1.4)}
+@media (pointer:coarse){#reticle{display:none}}
+
+/* ---------- debug / wireframe mode ---------- */
+body.wire main *,body.wire header.hud *{outline:1px dashed rgba(77,240,196,.35)!important;outline-offset:-1px}
+body.wire .panel,body.wire .level{background:rgba(10,12,22,.35)}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .sheet,.coop,.inv-wrap{grid-template-columns:1fr}
+  .inspect{position:static;min-height:0}
+  .xp{display:none}
+}
+@media (max-width:640px){
+  body{font-size:16px}
+  header.hud{padding:10px 16px;gap:10px;flex-wrap:wrap}
+  nav.menu{order:3;flex-basis:100%;margin:0 -16px;padding:0 12px}
+  html{scroll-padding-top:110px}
+  section{padding:120px 16px 30px}
+  #start{padding-top:120px}
+  .hud-btn .lbl{display:none}
+  .party{grid-template-columns:1fr}
+  .stat{grid-template-columns:84px 1fr 30px}
+  #game{height:380px}
+  .card-pad{padding:20px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  html{scroll-behavior:auto}
+  .reveal{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<canvas id="mesh" aria-hidden="true"></canvas>
+<div class="vignette" aria-hidden="true"></div>
+
+<!-- ============ BOOT SCREEN ============ -->
+<div id="boot" role="button" tabindex="0" aria-label="Press start to enter the portfolio">
+  <div>
+    <div class="studio">ShadowLeaf presents</div>
+    <svg class="logo" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+      <path d="M50 8 L94 86 H6 Z" stroke="#ffcf3f" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M50 8 L50 86 M6 86 L72 47 M94 86 L28 47" stroke="#4df0c4" stroke-width="1.5" opacity=".7"/>
+    </svg>
+    <div class="title">JERRY CHEN</div>
+    <div class="press">PRESS START</div>
+  </div>
+</div>
+
+<!-- ============ HUD ============ -->
+<header class="hud">
+  <a class="brand" href="#start" aria-label="Jerry Chen, back to top">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 L30 28 H2 Z" fill="none" stroke="#ffcf3f" stroke-width="2.5" stroke-linejoin="round"/><path d="M16 3 L16 28" stroke="#4df0c4" stroke-width="1.5"/></svg>
+    JC
+  </a>
+  <nav class="menu" aria-label="Sections">
+    <a href="#start"><span>00</span>Start</a>
+    <a href="#character"><span>01</span>Character</a>
+    <a href="#levels"><span>02</span>Levels</a>
+    <a href="#inventory"><span>03</span>Inventory</a>
+    <a href="#quests"><span>04</span>Quest Log</a>
+    <a href="#bonus"><span>05</span>Bonus</a>
+    <a href="#coop"><span>06</span>Co-op</a>
+  </nav>
+  <div class="hud-right">
+    <div class="xp" aria-hidden="true">
+      <div class="xp-label"><span>LV <b id="lv">1</b></span><span id="xpTxt">0 XP</span></div>
+      <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+    </div>
+    <button class="hud-btn" id="sfxBtn" aria-pressed="false" title="Toggle sound effects">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path id="sfxWave" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14" opacity=".25"/></svg><span class="lbl">SFX</span>
+    </button>
+    <button class="hud-btn" id="achBtn" title="Achievements">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 6h3v2a3 3 0 0 1-3 3M7 6H4v2a3 3 0 0 0 3 3"/></svg>
+      <span id="achCount">0/9</span>
+    </button>
+  </div>
+</header>
+
+<main>
+<!-- ============ 00 START ============ -->
+<section id="start" data-sec>
+  <div class="tag"><i></i>Game Design @ ASU · Class of 2027</div>
+  <h1 class="big-name" aria-label="Jerry Chen">
+    <span class="row" data-split>JERRY</span>
+    <span class="row" data-split>CHEN</span>
+  </h1>
+  <div class="role">&gt; <span id="roleTxt"></span><span class="caret"></span></div>
+  <div class="hero-actions">
+    <a class="btn btn-play" href="#levels">
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 1 L13 7 L2 13 Z" fill="currentColor"/></svg>
+      Play
+    </a>
+    <button class="btn btn-quit" id="quitBtn">✕ Quit</button>
+  </div>
+  <div class="hint">
+    <span>Move &amp; click the background — it's all triangles</span>
+    <span><kbd>`</kbd> open console</span>
+  </div>
+</section>
+
+<!-- ============ 01 CHARACTER ============ -->
+<section id="character" data-sec>
+  <div class="sec-head reveal"><span class="num">01</span><h2>Character Sheet</h2><p>// player profile, stats &amp; perks</p></div>
+  <div class="sheet">
+    <div class="panel card-pad reveal">
+      <div class="char-top">
+        <div class="avatar"><canvas id="avatar" width="184" height="184" aria-label="Generated low-poly avatar"></canvas></div>
+        <div>
+          <h3>Jerry Chen</h3>
+          <div class="char-meta">
+            <span>Class</span><b>Game Designer</b>
+            <span>Guild</span><b>Arizona State University</b>
+            <span>Handle</span><b>ShadowLeaf</b>
+          </div>
+        </div>
+      </div>
+      <p class="bio">I'm a game design student at ASU who builds in <em>Unity</em> and <em>Unreal Engine 5</em>, and right now I'm learning to ship games for the web. I care about game feel, readable systems, and stories you want to keep playing. Also, <em>everything is triangles</em>. Look behind this text.</p>
+      <div id="stats">
+        <div class="stat" style="--c:var(--gold)"><span>CREATIVITY</span><div class="bar"><i data-v="88"></i></div><span class="val">88</span></div>
+        <div class="stat" style="--c:var(--mint)"><span>SYSTEMS</span><div class="bar"><i data-v="78"></i></div><span class="val">78</span></div>
+        <div class="stat" style="--c:var(--violet)"><span>NARRATIVE</span><div class="bar"><i data-v="84"></i></div><span class="val">84</span></div>
+        <div class="stat" style="--c:var(--coral)"><span>CODE</span><div class="bar"><i data-v="72"></i></div><span class="val">72</span></div>
+        <div class="stat" style="--c:#7fd1ff"><span>TRIANGLES</span><div class="bar"><i data-v="99"></i></div><span class="val">99</span></div>
+      </div>
+    </div>
+    <div class="panel card-pad reveal">
+      <div class="perk-title" style="margin-top:0">Passive Perks</div>
+      <div class="perks">
+        <div class="perk"><div class="ico">▲</div><div><h4>Polygon Brain</h4><p>Sees the world as a mesh. +15% to understanding how 3D actually renders.</p></div></div>
+        <div class="perk"><div class="ico">¶</div><div><h4>Webnovel Binger</h4><p>Reads way too many webnovels. Gains narrative XP per chapter, which should pay off in quest writing.</p></div></div>
+        <div class="perk"><div class="ico">⟳</div><div><h4>Iterate Again</h4><p>Prototype, playtest, repeat. Takes less damage from "it's not fun yet."</p></div></div>
+      </div>
+      <div class="perk-title">Party Members · Favorite Games</div>
+      <div class="party">
+        <div class="member" style="--c:#4fb3ff"><div class="glyph">LoL</div><h4>League of Legends</h4><p>"Not an addiction I swear"</p></div>
+        <div class="member" style="--c:var(--mint)"><div class="glyph">❄</div><h4>Wildfrost</h4><p>"Way too busy grooving to the music"</p></div>
+        <div class="member" style="--c:var(--gold)"><div class="glyph">悟</div><h4>Black Myth: Wukong</h4><p>"Monke see monke bonk"</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 02 LEVELS ============ -->
+<section id="levels" data-sec>
+  <div class="sec-head reveal"><span class="num">02</span><h2>Level Select</h2><p>// projects. Click a level for its briefing.</p></div>
+  <div class="filters reveal" role="group" aria-label="Filter projects">
+    <button class="chip on" data-f="all">All</button>
+    <button class="chip" data-f="unity">Unity</button>
+    <button class="chip" data-f="web">Web</button>
+  </div>
+  <div class="levels" id="levelGrid"></div>
+</section>
+
+<!-- ============ 03 INVENTORY ============ -->
+<section id="inventory" data-sec>
+  <div class="sec-head reveal"><span class="num">03</span><h2>Inventory</h2><p>// skills &amp; tools. Hover or tap an item to inspect it.</p></div>
+  <div class="inv-wrap">
+    <div class="panel inventory reveal" id="invGrid" role="list"></div>
+    <aside class="panel inspect reveal" id="inspect" aria-live="polite">
+      <p class="placeholder">▸ Select an item to inspect it.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ 04 QUEST LOG ============ -->
+<section id="quests" data-sec>
+  <div class="sec-head reveal"><span class="num">04</span><h2>Quest Log</h2><p>// education &amp; AME 220 coursework</p></div>
+  <div class="quests">
+    <div class="quest panel reveal">
+      <div class="quest-top"><h3>Main Quest: B.S. Game Design</h3><span class="when">ASU · 2027</span></div>
+      <p>Arizona State University. Learning design, production, and how to build the games I want to play.</p>
+    </div>
+    <div class="quest panel done reveal">
+      <div class="quest-top"><h3>Week 2: First Game + Homepage</h3><span class="when">✓ Complete</span></div>
+      <p>My first browser game written in plain HTML, plus my first homepage.</p>
+      <div class="links"><a href="../Week2/FirstGame/index.html">→ Play First Game</a><a href="../Week2/HW/index.html">→ Homepage HW</a></div>
+    </div>
+    <div class="quest panel done reveal">
+      <div class="quest-top"><h3>Week 3: CSS Styling</h3><span class="when">✓ Complete</span></div>
+      <p>A styled CSS portfolio page and a card component with custom fonts.</p>
+      <div class="links"><a href="../Week3/Classwork/index.html">→ CSS Portfolio</a><a href="../Week3/Homework/index.html">→ Card HW</a></div>
+    </div>
+    <div class="quest panel reveal">
+      <div class="quest-top"><h3>Side Quest: This Portfolio</h3><span class="when">◆ Active</span></div>
+      <p>An interactive portfolio with canvas, JavaScript, a mini-game, and achievements.</p>
+    </div>
+    <div class="quest panel todo reveal">
+      <div class="quest-top"><h3>Weeks 5–7</h3><span class="when">🔒 Locked</span></div>
+      <p>Unlocks as the semester goes on.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 BONUS STAGE ============ -->
+<section id="bonus" data-sec>
+  <div class="sec-head reveal"><span class="num">05</span><h2>Bonus Stage</h2><p>// a 30-second mini-game. Catch the good triangles.</p></div>
+  <div class="panel stage reveal">
+    <canvas id="game" aria-label="Triangle Rain mini-game"></canvas>
+    <div class="stage-hud"><span>SCORE <b id="gScore">0</b></span><span>TIME <b id="gTime">30</b></span><span>BEST <b id="gBest">0</b></span></div>
+    <div class="stage-overlay" id="gOverlay">
+      <div>
+        <h3 id="gTitle">TRIANGLE RAIN</h3>
+        <p id="gSub">Move with your mouse, finger, or ← → / A D. You have 30 seconds.</p>
+        <div class="legend">
+          <span style="--c:var(--gold)"><i></i>+1</span>
+          <span style="--c:var(--mint)"><i></i>+5 rare</span>
+          <span style="--c:var(--coral)"><i></i>−3 glitch</span>
+        </div>
+        <button class="btn btn-play" id="gStart">▶ Start</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 CO-OP ============ -->
+<section id="coop" data-sec>
+  <div class="sec-head reveal"><span class="num">06</span><h2>Co-op Mode</h2><p>// contact</p></div>
+  <div class="coop">
+    <div class="panel card-pad reveal">
+      <h3>Player 2,<br><span>press start.</span></h3>
+      <p class="lead">I'm open to game jams, team projects, playtesting swaps, or just talking about games. Send a message.</p>
+      <div class="contact-row">
+        <button class="copy" id="copyMail">jchen548@asu.edu <small>[copy]</small></button>
+        <a class="copy" href="https://itch.io/profile/shadowleafing" target="_blank" rel="noopener">itch.io ↗</a>
+      </div>
+    </div>
+    <form class="panel card-pad msg reveal" id="msgForm">
+      <label>Your name<input name="name" required autocomplete="name" placeholder="Player 2"></label>
+      <label>Message<textarea name="msg" rows="4" required placeholder="Wanna team up for a game jam?"></textarea></label>
+      <button class="btn btn-play" type="submit" style="justify-content:center">Send message ▲</button>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div>© 2026 Jerry Chen · built with HTML, CSS, JS and a lot of triangles</div>
+  <div class="secret">↑ ↑ ↓ ↓ ← → ← → B A</div>
+</footer>
+
+<!-- dialogs -->
+<dialog id="briefDlg" aria-labelledby="briefTitle">
+  <div class="dlg-head"><h3 id="briefTitle">Level Briefing</h3><button class="dlg-x" data-close aria-label="Close">✕</button></div>
+  <div class="dlg-body" id="briefBody"></div>
+</dialog>
+<dialog id="achDlg" aria-labelledby="achTitle">
+  <div class="dlg-head"><h3 id="achTitle">Achievements</h3><button class="dlg-x" data-close aria-label="Close">✕</button></div>
+  <div class="dlg-body">
+    <div class="ach-progress" id="achProg"></div>
+    <div class="ach-list" id="achList"></div>
+  </div>
+</dialog>
+
+<div id="console" role="dialog" aria-label="Developer console">
+  <div class="con-head"><span>~/jerry — dev console</span><span>type "help" · esc to close</span></div>
+  <div id="con-out"></div>
+  <div class="con-in"><span>&gt;</span><input id="con-in" autocomplete="off" spellcheck="false" aria-label="Console command"></div>
+</div>
+
+<div id="toasts" aria-live="polite"></div>
+<div id="reticle" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 3 L25 23 H3 Z"/><circle cx="14" cy="16" r="1.6" fill="currentColor"/></svg></div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const finePointer = matchMedia('(pointer: fine)').matches;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+// seeded random so the mesh looks the same every visit
+let seed = 548;
+const rand = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+
+/* ================= SOUND ================= */
+let sfxOn = store.get('jc-sfx', false), actx = null;
+function blip(freq = 440, dur = 0.08, type = 'square', vol = 0.04, slide = 0) {
+  if (!sfxOn) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur + 0.02);
+  } catch {}
+}
+const jingle = () => [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => blip(f, 0.12, 'square', 0.035), i * 90));
+const sfxBtn = $('#sfxBtn');
+function paintSfx() { sfxBtn.classList.toggle('on', sfxOn); sfxBtn.setAttribute('aria-pressed', sfxOn); $('#sfxWave').setAttribute('opacity', sfxOn ? 1 : .25); }
+sfxBtn.addEventListener('click', () => { sfxOn = !sfxOn; store.set('jc-sfx', sfxOn); paintSfx(); blip(880, .1); });
+paintSfx();
+
+/* ================= TOASTS ================= */
+const trophy = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/></svg>';
+function toast(title, sub, kind = 'ach') {
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind === 'info' ? ' info' : '');
+  el.innerHTML = `<div class="medal">${kind === 'info' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>' : trophy}</div>
+    <div><small>${kind === 'info' ? 'Notice' : 'Achievement unlocked'}</small><b></b><span></span></div>`;
+  el.querySelector('b').textContent = title; el.querySelector('span').textContent = sub;
+  $('#toasts').appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 400); }, 3800);
+}
+
+/* ================= ACHIEVEMENTS ================= */
+const ACH = [
+  { id: 'start',    name: 'Press Start',     desc: 'Booted up the portfolio.' },
+  { id: 'quit',     name: 'Nice Try',        desc: 'Tried to quit. There is no quitting.' },
+  { id: 'letters',  name: 'Letter Spinner',  desc: 'Spun every letter of the name.' },
+  { id: 'mesh',     name: 'Mesh Bender',     desc: 'Sent 10 shockwaves through the mesh.' },
+  { id: 'brief',    name: 'Level Inspector', desc: 'Opened a level briefing.' },
+  { id: 'explorer', name: 'Explorer',        desc: 'Visited every section.' },
+  { id: 'score',    name: 'High Scorer',     desc: 'Scored 25+ in Triangle Rain.' },
+  { id: 'console',  name: 'Hacker Voice',    desc: 'Ran a console command.' },
+  { id: 'konami',   name: 'Old School',      desc: 'Entered the code. Debug view toggled.' },
+];
+let got = new Set(store.get('jc-ach', []));
+function unlock(id) {
+  if (got.has(id)) return;
+  const a = ACH.find(x => x.id === id); if (!a) return;
+  got.add(id); store.set('jc-ach', [...got]);
+  toast(a.name, a.desc); jingle(); paintAch();
+  mesh.burst(innerWidth - 60, innerHeight - 60, '#ffcf3f');
+  if (got.size === ACH.length) setTimeout(() => { toast('100% Completion', 'You found everything. Thanks for playing!'); mesh.burst(innerWidth / 2, innerHeight / 2, '#4df0c4', 1.8); }, 1200);
+}
+function paintAch() {
+  $('#achCount').textContent = `${got.size}/${ACH.length}`;
+  const pct = Math.round(got.size / ACH.length * 100);
+  $('#achProg').innerHTML = `${got.size} of ${ACH.length} unlocked · ${pct}%<div class="xp-bar"><div class="xp-fill" style="width:${pct}%"></div></div>`;
+  $('#achList').innerHTML = ACH.map(a => {
+    const g = got.has(a.id);
+    return `<div class="ach ${g ? 'got' : ''}"><div class="medal">${g ? trophy : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'}</div>
+      <div><b>${g ? a.name : '???'}</b><span>${a.desc}</span></div></div>`;
+  }).join('');
+}
+$('#achBtn').addEventListener('click', () => { paintAch(); $('#achDlg').showModal(); blip(660, .08); });
+$$('dialog').forEach(d => {
+  d.addEventListener('click', e => { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
+});
+
+/* ================= TRIANGLE MESH ================= */
+const mesh = (() => {
+  const cv = $('#mesh'), ctx = cv.getContext('2d');
+  let W, H, S, cols, rows, pts = [], tris = [];
+  const mouse = { x: -9999, y: -9999, tx: -9999, ty: -9999 };
+  const waves = [];
+  let wire = false, running = true;
+
+  function build() {
+    seed = 548;
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    S = W < 700 ? 62 : 86;
+    cols = Math.ceil(W / S) + 3; rows = Math.ceil(H / (S * 0.866)) + 3;
+    pts = [];
+    for (let r = 0; r < rows; r++) for (let q = 0; q < cols; q++) {
+      const bx = (q - 1) * S + (r % 2) * S / 2 + (rand() - .5) * S * .5;
+      const by = (r - 1) * S * .866 + (rand() - .5) * S * .5;
+      pts.push({ bx, by, x: bx, y: by, ph: rand() * 6.283 });
+    }
+    tris = [];
+    for (let r = 0; r < rows - 1; r++) for (let q = 0; q < cols - 1; q++) {
+      const a = r * cols + q, b = a + 1, c = a + cols, d = c + 1;
+      const pair = r % 2 === 0 ? [[a, b, c], [b, d, c]] : [[a, d, c], [a, b, d]];
+      for (const t of pair) tris.push({ v: t, shade: rand(), hue: 228 + rand() * 30, flash: 0 });
+    }
+  }
+
+  function draw(t) {
+    mouse.x += (mouse.tx - mouse.x) * .18; mouse.y += (mouse.ty - mouse.y) * .18;
+    ctx.clearRect(0, 0, W, H);
+    const R = 220;
+    for (let i = waves.length - 1; i >= 0; i--) { const w = waves[i]; w.r += w.speed; if (w.r > w.max) waves.splice(i, 1); }
+    for (const p of pts) {
+      let x = p.bx, y = p.by;
+      if (!reduced) { x += Math.sin(t * .0006 + p.ph) * 4; y += Math.cos(t * .0005 + p.ph * 1.3) * 4; }
+      const dx = x - mouse.x, dy = y - mouse.y, d = Math.hypot(dx, dy) || 1;
+      if (d < R) { const f = (1 - d / R) ** 2 * 34; x += dx / d * f; y += dy / d * f; }
+      for (const w of waves) {
+        const wx = p.bx - w.x, wy = p.by - w.y, wd = Math.hypot(wx, wy) || 1;
+        const band = 1 - Math.abs(wd - w.r) / 70;
+        if (band > 0) { const f = band * 22 * (1 - w.r / w.max); x += wx / wd * f; y += wy / wd * f; }
+      }
+      p.x = x; p.y = y;
+    }
+    ctx.lineJoin = 'round';
+    for (const tr of tris) {
+      const A = pts[tr.v[0]], B = pts[tr.v[1]], C = pts[tr.v[2]];
+      const cx = (A.x + B.x + C.x) / 3, cy = (A.y + B.y + C.y) / 3;
+      const md = Math.hypot(cx - mouse.x, cy - mouse.y);
+      const glow = Math.max(0, 1 - md / (R * 1.1));
+      let wv = 0, wc = null;
+      for (const w of waves) {
+        const b = 1 - Math.abs(Math.hypot(cx - w.x, cy - w.y) - w.r) / 55;
+        if (b > wv) { wv = b * (1 - w.r / w.max); wc = w.color; }
+      }
+      tr.flash *= .92;
+      const light = 6 + tr.shade * 6 + glow * 10 + (cy / H) * -2;
+      ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y); ctx.closePath();
+      ctx.fillStyle = `hsl(${tr.hue + glow * 20},${38 + glow * 30}%,${light}%)`;
+      ctx.fill();
+      if (glow > 0.01) { ctx.fillStyle = `rgba(255,207,63,${glow * glow * .32})`; ctx.fill(); }
+      if (wv > 0.01) { ctx.fillStyle = hexA(wc, wv * .55); ctx.fill(); }
+      if (tr.flash > 0.01) { ctx.fillStyle = `rgba(77,240,196,${tr.flash})`; ctx.fill(); }
+      ctx.strokeStyle = wire ? `rgba(77,240,196,${.35 + glow * .5})` : `rgba(150,160,230,${.06 + glow * .35})`;
+      ctx.lineWidth = wire ? 1 : .8;
+      ctx.stroke();
+    }
+  }
+  const hexA = (h, a) => { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${a})`; };
+
+  let last = 0, idle = 0;
+  function loop(t) {
+    // in reduced-motion mode only redraw while something is moving
+    if (!reduced || waves.length || Math.abs(mouse.tx - mouse.x) > .5 || tris.some(x => x.flash > .01) || idle < 2) {
+      draw(t); idle++;
+    }
+    last = t; if (running) requestAnimationFrame(loop);
+  }
+  addEventListener('resize', () => { build(); idle = 0; });
+  addEventListener('pointermove', e => { mouse.tx = e.clientX; mouse.ty = e.clientY; if (mouse.x < -999) { mouse.x = e.clientX; mouse.y = e.clientY; } idle = 0; }, { passive: true });
+  document.addEventListener('pointerleave', () => { mouse.tx = mouse.ty = -9999; });
+  document.addEventListener('visibilitychange', () => { running = !document.hidden; if (running) requestAnimationFrame(loop); });
+  build(); requestAnimationFrame(loop);
+
+  return {
+    wave(x, y, color = '#ffcf3f', scale = 1) { waves.push({ x, y, r: 0, max: 520 * scale, speed: 9, color }); idle = 0; },
+    burst(x, y, color, scale = 1) { this.wave(x, y, color, scale); },
+    flashAll() { tris.forEach(t => t.flash = rand() * .5); idle = 0; },
+    toggleWire() { wire = !wire; document.body.classList.toggle('wire', wire); idle = 0; return wire; },
+  };
+})();
+
+// click empty space -> shockwave
+let waveCount = 0;
+document.addEventListener('pointerdown', e => {
+  if (e.target.closest('a,button,input,textarea,label,dialog,#console,.panel,.level,#boot,header')) return;
+  const colors = ['#ffcf3f', '#4df0c4', '#ff5d73', '#9b7bff'];
+  mesh.wave(e.clientX, e.clientY, colors[waveCount % 4]);
+  blip(220 + (waveCount % 8) * 40, .15, 'triangle', .05, 200);
+  if (++waveCount >= 10) unlock('mesh');
+});
+
+/* ================= BOOT ================= */
+const boot = $('#boot');
+let booted = false;
+function startGame() {
+  if (booted) return; booted = true;
+  boot.classList.add('gone'); document.body.classList.remove('booting');
+  try { sessionStorage.setItem('jc-booted', '1'); } catch {}
+  setTimeout(() => { mesh.wave(innerWidth / 2, innerHeight / 2, '#4df0c4', 1.6); unlock('start'); }, 250);
+}
+let skipBoot = false; try { skipBoot = sessionStorage.getItem('jc-booted') === '1'; } catch {}
+if (skipBoot) { booted = true; boot.style.display = 'none'; }
+else {
+  document.body.classList.add('booting');
+  boot.addEventListener('click', startGame);
+  addEventListener('keydown', function k(e) { if (!booted) { e.preventDefault(); startGame(); removeEventListener('keydown', k); } });
+  boot.focus();
+}
+
+/* ================= HERO ================= */
+// split name into letter spans
+let li = 0;
+const spun = new Set();
+$$('[data-split]').forEach(row => {
+  row.innerHTML = [...row.textContent].map(ch => `<span class="ltr" style="--i:${li++}" aria-hidden="true">${ch}</span>`).join('');
+});
+const letters = $$('.big-name .ltr');
+letters.forEach((l, i) => {
+  l.addEventListener('click', () => {
+    l.classList.remove('spin'); void l.offsetWidth; l.classList.add('spin');
+    blip(300 + i * 60, .1, 'square', .03);
+    spun.add(i); if (spun.size === letters.length) unlock('letters');
+  });
+  l.addEventListener('animationend', e => { if (e.animationName === 'spin') l.classList.remove('spin'); });
+});
+
+// typewriter roles
+const roles = ['game designer', 'Unity + C# tinkerer', 'level builder', 'webnovel speedreader', 'triangle enthusiast', 'student @ ASU'];
+const roleEl = $('#roleTxt');
+(function type(ri = 0, ci = 0, del = false) {
+  const word = roles[ri];
+  roleEl.innerHTML = `<b>${word.slice(0, ci)}</b>`;
+  if (reduced) { roleEl.innerHTML = `<b>${roles[0]}</b>`; return; }
+  if (!del && ci === word.length) return setTimeout(() => type(ri, ci, true), 1800);
+  if (del && ci === 0) return setTimeout(() => type((ri + 1) % roles.length, 0, false), 300);
+  setTimeout(() => type(ri, ci + (del ? -1 : 1), del), del ? 35 : 70);
+})();
+
+// the quit button that won't let you quit
+const quit = $('#quitBtn');
+let dodges = 0;
+const quitLines = ['✕ Quit', 'nope', 'too slow', 'almost!', 'fine, click me'];
+quit.addEventListener('pointerenter', e => {
+  if (e.pointerType !== 'mouse' || dodges >= 4 || reduced) return;
+  dodges++;
+  const x = (Math.random() > .5 ? 1 : -1) * (60 + Math.random() * 80);
+  const y = (Math.random() - .5) * 60;
+  quit.style.transform = `translate(${x}px,${y}px) rotate(${(Math.random() - .5) * 20}deg)`;
+  quit.textContent = quitLines[dodges];
+  blip(600 - dodges * 80, .06, 'sawtooth', .025);
+});
+quit.addEventListener('click', () => {
+  quit.style.transform = '';
+  quit.classList.remove('shake'); void quit.offsetWidth; quit.classList.add('shake');
+  quit.textContent = 'There is no quitting';
+  blip(140, .25, 'sawtooth', .04, -60);
+  unlock('quit');
+  setTimeout(() => { quit.textContent = '✕ Quit'; dodges = 0; }, 2200);
+});
+
+/* ================= AVATAR (generated low-poly) ================= */
+(() => {
+  const c = $('#avatar'), x = c.getContext('2d'), N = 184;
+  const pal = ['#ffcf3f', '#ffb13f', '#4df0c4', '#36c7a8', '#9b7bff', '#6f5bd6', '#1d2246', '#272d5c'];
+  x.fillStyle = '#12152a'; x.fillRect(0, 0, N, N);
+  const g = 4, s = N / g; seed = 97;
+  for (let r = 0; r < g; r++) for (let q = 0; q < g; q++) {
+    const x0 = q * s, y0 = r * s;
+    const pairs = (r + q) % 2 ? [[[x0, y0], [x0 + s, y0], [x0, y0 + s]], [[x0 + s, y0], [x0 + s, y0 + s], [x0, y0 + s]]]
+                              : [[[x0, y0], [x0 + s, y0], [x0 + s, y0 + s]], [[x0, y0], [x0 + s, y0 + s], [x0, y0 + s]]];
+    for (const t of pairs) {
+      x.beginPath(); t.forEach(([a, b], i) => i ? x.lineTo(a, b) : x.moveTo(a, b)); x.closePath();
+      const dist = Math.hypot(x0 + s / 2 - N / 2, y0 + s / 2 - N / 2) / N;
+      x.fillStyle = pal[Math.floor(rand() * 4 + (dist > .35 ? 4 : 0))];
+      x.globalAlpha = .55 + rand() * .45; x.fill();
+    }
+  }
+  x.globalAlpha = 1;
+  x.fillStyle = '#0a0c16'; x.font = '900 64px Unbounded, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  document.fonts && document.fonts.ready.then(() => { x.fillText('JC', N / 2, N / 2 + 4); });
+})();
+
+/* ================= LEVELS ================= */
+const LEVELS = [
+  { id: 'topdown', no: '1-1', title: '2D Top-Down Game', cat: 'unity', img: 'assets/projectPic.gif',
+    desc: 'A 2D top-down game built in Unity: movement, enemies, and level layout from scratch.',
+    tags: ['Unity', 'C#', '2D'], diff: 3, role: 'Solo dev, design & code', link: 'https://itch.io/profile/shadowleafing', linkTxt: 'Play on itch.io ↗' },
+  { id: 'firstgame', no: '1-2', title: 'First Browser Game', cat: 'web', art: ['#ff5d73', '#ffcf3f'],
+    desc: 'A creature-battle fan game made in plain HTML for AME 220. It was my first game for the web.',
+    tags: ['HTML', 'Web'], diff: 1, role: 'Coursework, AME 220', link: '../Week2/FirstGame/index.html', linkTxt: 'Enter level →' },
+  { id: 'cssfolio', no: '1-3', title: 'CSS Portfolio Page', cat: 'web', art: ['#9b7bff', '#4df0c4'],
+    desc: 'A themed profile page where I practiced CSS layout, custom fonts, and card grids.',
+    tags: ['HTML', 'CSS'], diff: 2, role: 'Coursework, AME 220', link: '../Week3/Classwork/index.html', linkTxt: 'Enter level →' },
+  { id: 'portfolio', no: '1-4', title: 'This Portfolio', cat: 'web', art: ['#ffcf3f', '#4df0c4'],
+    desc: 'You\'re in it: a canvas triangle mesh, a mini-game, achievements, and a dev console.',
+    tags: ['JavaScript', 'Canvas', 'CSS'], diff: 3, role: 'Design & code', link: '#start', linkTxt: 'Back to start ↑' },
+  { id: 'locked', no: '2-1', title: 'Next Level', cat: 'unity', locked: true,
+    desc: 'In development. Check back soon.', tags: ['Unreal Engine 5?'], diff: 0 },
+];
+const grid = $('#levelGrid');
+function triArt(canvas, [c1, c2], s) {
+  const w = canvas.width = 480, h = canvas.height = 300, x = canvas.getContext('2d');
+  seed = s; x.fillStyle = '#0e1124'; x.fillRect(0, 0, w, h);
+  for (let i = 0; i < 26; i++) {
+    const cx = rand() * w, cy = rand() * h, r = 20 + rand() * 90, a = rand() * 6.28;
+    x.beginPath();
+    for (let k = 0; k < 3; k++) { const ang = a + k * 2.094; x.lineTo(cx + Math.cos(ang) * r, cy + Math.sin(ang) * r); }
+    x.closePath(); x.globalAlpha = .15 + rand() * .55; x.fillStyle = rand() > .5 ? c1 : c2; x.fill();
+  }
+  x.globalAlpha = 1;
+}
+LEVELS.forEach((L, idx) => {
+  const el = document.createElement('button');
+  el.className = 'level reveal' + (L.locked ? ' locked' : '');
+  el.dataset.cat = L.cat;
+  el.setAttribute('aria-label', L.locked ? `${L.title} (locked)` : `Open briefing: ${L.title}`);
+  const thumb = L.locked ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'
+              : L.img ? `<img src="${L.img}" alt="" loading="lazy">` : '<canvas></canvas>';
+  el.innerHTML = `<div class="thumb">${thumb}<span class="lvl-no">LV ${L.no}</span><div class="glare"></div></div>
+    <div class="body"><h3>${L.title}</h3><p>${L.desc}</p>
+    ${L.diff ? `<div class="diff">DIFFICULTY <b>${'▲'.repeat(L.diff)}${'△'.repeat(3 - L.diff)}</b></div>` : ''}
+    <div class="tags">${L.tags.map(t => `<span>${t}</span>`).join('')}</div></div>`;
+  if (L.art) triArt(el.querySelector('canvas'), L.art, idx * 31 + 7);
+  grid.appendChild(el);
+  // 3D tilt
+  if (finePointer && !reduced) {
+    el.addEventListener('pointermove', e => {
+      const r = el.getBoundingClientRect(), px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+      el.style.transform = `perspective(800px) rotateY(${(px - .5) * 12}deg) rotateX(${(.5 - py) * 12}deg) translateY(-4px)`;
+      el.style.setProperty('--gx', px * 100 + '%'); el.style.setProperty('--gy', py * 100 + '%');
+    });
+    el.addEventListener('pointerleave', () => { el.style.transform = ''; });
+  }
+  el.addEventListener('pointerenter', () => blip(520, .04, 'square', .02));
+  el.addEventListener('click', () => {
+    if (L.locked) { el.animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: 300 }); blip(120, .2, 'sawtooth', .04); toast('Level locked', 'This one is still in development.', 'info'); return; }
+    openBrief(L);
+  });
+});
+function openBrief(L) {
+  const body = $('#briefBody');
+  $('#briefTitle').textContent = `LV ${L.no} · ${L.title}`;
+  body.innerHTML = (L.img ? `<img class="brief-img" src="${L.img}" alt="Screenshot of ${L.title}">` : '<canvas class="brief-img"></canvas>') +
+    `<p style="color:#c9cdf0">${L.desc}</p>
+     <dl class="brief-meta"><dt>Role</dt><dd>${L.role}</dd><dt>Tools</dt><dd>${L.tags.join(' · ')}</dd><dt>Difficulty</dt><dd style="color:var(--gold)">${'▲'.repeat(L.diff)}${'△'.repeat(3 - L.diff)}</dd></dl>
+     <a class="btn btn-play" href="${L.link}" ${L.link.startsWith('http') ? 'target="_blank" rel="noopener"' : ''}>${L.linkTxt}</a>`;
+  if (L.art) triArt(body.querySelector('canvas'), L.art, LEVELS.indexOf(L) * 31 + 7);
+  body.querySelector('a').addEventListener('click', () => $('#briefDlg').close());
+  $('#briefDlg').showModal(); blip(740, .08); unlock('brief');
+}
+$$('.chip').forEach(ch => ch.addEventListener('click', () => {
+  $$('.chip').forEach(c => c.classList.toggle('on', c === ch));
+  const f = ch.dataset.f;
+  $$('.level').forEach(l => l.classList.toggle('hide', f !== 'all' && l.dataset.cat !== f));
+  blip(600, .05);
+}));
+
+/* ================= INVENTORY ================= */
+const RAR = { Legendary: '#ffcf3f', Epic: '#9b7bff', Rare: '#4fb3ff', Uncommon: '#4df0c4' };
+const ITEMS = [
+  { g: 'GD', n: 'Game Design', r: 'Legendary', d: 'Core class skill: loops, levels, pacing, and making players feel something.', e: '+ Passive: every system gets playtested.' },
+  { g: 'U', n: 'Unity', r: 'Legendary', d: 'My main engine. I use it for 2D top-down games, prototypes, and gameplay scripting.', e: '+ Equipped as primary weapon' },
+  { g: 'C#', n: 'C#', r: 'Epic', d: 'Gameplay scripting in Unity: controllers, enemies, and game state.', e: '+20% scripting speed in Unity' },
+  { g: 'UE', n: 'Unreal Engine 5', r: 'Epic', d: 'Blueprints, level blockouts, and the very shiny lighting.', e: '+ Unlocks: Lumen-powered screenshots' },
+  { g: '</>', n: 'HTML', r: 'Rare', d: 'Structure for the web. Leveled up during AME 220.', e: '+ Can build pages like this one' },
+  { g: '{}', n: 'CSS', r: 'Rare', d: 'Layout, animation, and theming. All the triangles on this site get styled with it.', e: '+ Style points' },
+  { g: 'JS', n: 'JavaScript', r: 'Rare', d: 'Canvas, interaction, and little browser games. This page runs on it.', e: '+ Makes things move' },
+  { g: 'git', n: 'Git & GitHub', r: 'Uncommon', d: 'Save-scumming for code. Commit early, commit often.', e: '+ Revive from bad changes' },
+];
+const inv = $('#invGrid'), insp = $('#inspect');
+function inspect(it, slot) {
+  $$('.slot').forEach(s => s.classList.toggle('sel', s === slot));
+  insp.style.setProperty('--rc', RAR[it.r]);
+  insp.innerHTML = `<div class="rar">${it.r}</div><h3>${it.n}</h3><p>${it.d}</p><div class="effect">${it.e}</div>`;
+}
+ITEMS.concat(Array(4).fill(null)).forEach((it, i) => {
+  const s = document.createElement(it ? 'button' : 'div');
+  s.className = 'slot' + (it ? '' : ' empty'); s.setAttribute('role', 'listitem');
+  if (it) {
+    s.style.setProperty('--rc', RAR[it.r]);
+    s.innerHTML = `<span class="g">${it.g.replace('<', '&lt;').replace('>', '&gt;')}</span><span class="n">${it.n}</span>`;
+    s.setAttribute('aria-label', `${it.n}, ${it.r}`);
+    const go = () => { inspect(it, s); blip(400 + i * 50, .05, 'triangle', .04); };
+    s.addEventListener('mouseenter', go); s.addEventListener('focus', go); s.addEventListener('click', go);
+  } else {
+    s.innerHTML = '<span class="g">+</span><span class="n">learning…</span>';
+    s.setAttribute('aria-label', 'Empty slot');
+  }
+  inv.appendChild(s);
+});
+
+/* ================= SCROLL: reveal, nav, XP ================= */
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+}), { threshold: .12 });
+$$('.reveal').forEach(el => io.observe(el));
+
+const statIO = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) { $$('#stats i').forEach(b => b.style.width = b.dataset.v + '%'); statIO.disconnect(); }
+}), { threshold: .4 });
+statIO.observe($('#stats'));
+
+const sections = $$('[data-sec]'), visited = new Set();
+const navLinks = $$('nav.menu a');
+const secIO = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  const id = e.target.id;
+  navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  visit(id);
+}), { rootMargin: '-45% 0px -50% 0px' });
+function visit(id) {
+  if (visited.has(id)) return;
+  visited.add(id);
+  if (visited.size > 1) blip(880, .06, 'square', .02);
+  if (visited.size === sections.length) unlock('explorer');
+  paintXP();
+}
+sections.forEach(s => secIO.observe(s));
+function paintXP() {
+  const max = document.documentElement.scrollHeight - innerHeight;
+  const pct = max > 0 ? Math.min(1, scrollY / max) : 0;
+  if (pct > .985 && !visited.has('coop')) { visit('coop'); navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#coop')); }
+  $('#xpFill').style.width = (pct * 100).toFixed(1) + '%';
+  $('#lv').textContent = Math.max(1, visited.size);
+  $('#xpTxt').textContent = Math.round(visited.size * 100 + pct * 300) + ' XP';
+}
+addEventListener('scroll', paintXP, { passive: true });
+
+/* ================= RETICLE ================= */
+if (finePointer) {
+  const ret = $('#reticle'); let rx = 0, ry = 0, tx = 0, ty = 0;
+  addEventListener('pointermove', e => { tx = e.clientX; ty = e.clientY; ret.style.opacity = 1;
+    ret.classList.toggle('hot', !!e.target.closest('a,button,.level,.slot,.ltr'));
+  }, { passive: true });
+  document.addEventListener('pointerleave', () => ret.style.opacity = 0);
+  (function f() { rx += (tx - rx) * .25; ry += (ty - ry) * .25; ret.style.transform = `translate(${rx}px,${ry}px)`; requestAnimationFrame(f); })();
+}
+
+/* ================= BONUS STAGE: TRIANGLE RAIN ================= */
+(() => {
+  const cv = $('#game'), x = cv.getContext('2d');
+  const ov = $('#gOverlay'), scoreEl = $('#gScore'), timeEl = $('#gTime'), bestEl = $('#gBest');
+  let W, H, dpr, playing = false, score, timeLeft, items, parts, px, pvx, keys = {}, lastT, spawnT, shake = 0;
+  let best = store.get('jc-best', 0); bestEl.textContent = best;
+  function size() {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    const r = cv.getBoundingClientRect(); W = r.width; H = r.height;
+    cv.width = W * dpr; cv.height = H * dpr; x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (!playing) idle();
+  }
+  function tri(cx, cy, r, rot, fill) {
+    x.beginPath();
+    for (let k = 0; k < 3; k++) { const a = rot + k * 2.094 - Math.PI / 2; x.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); }
+    x.closePath(); x.fillStyle = fill; x.fill();
+  }
+  function idle() {
+    x.clearRect(0, 0, W, H);
+    seed = 7;
+    for (let i = 0; i < 30; i++) tri(rand() * W, rand() * H, 6 + rand() * 14, rand() * 6, `rgba(255,207,63,${.08 + rand() * .15})`);
+  }
+  function start() {
+    score = 0; timeLeft = 30; items = []; parts = []; px = W / 2; pvx = 0; spawnT = 0; lastT = performance.now(); playing = true;
+    ov.classList.add('hidden'); scoreEl.textContent = 0; timeEl.textContent = 30;
+    blip(440, .1); setTimeout(() => blip(660, .1), 100); setTimeout(() => blip(880, .15), 200);
+    requestAnimationFrame(step);
+  }
+  function end() {
+    playing = false;
+    const nb = score > best; if (nb) { best = score; store.set('jc-best', best); bestEl.textContent = best; }
+    $('#gTitle').textContent = nb ? 'NEW BEST!' : 'TIME!';
+    $('#gSub').textContent = `You caught ${score} point${score === 1 ? '' : 's'}.` + (score >= 25 ? ' Seriously good.' : ' Score 25 for an achievement.');
+    $('#gStart').textContent = '↻ Retry';
+    ov.classList.remove('hidden'); jingle();
+    if (score >= 25) unlock('score');
+  }
+  function burst(bx, by, color, n = 12) {
+    for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, s = 1 + Math.random() * 4; parts.push({ x: bx, y: by, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 2, life: 1, color }); }
+  }
+  function step(t) {
+    if (!playing) return;
+    const dt = Math.min(.05, (t - lastT) / 1000); lastT = t;
+    timeLeft -= dt; timeEl.textContent = Math.max(0, Math.ceil(timeLeft));
+    if (timeLeft <= 0) { end(); return; }
+    // input
+    const kdir = (keys.ArrowRight || keys.d ? 1 : 0) - (keys.ArrowLeft || keys.a ? 1 : 0);
+    if (kdir) { pvx += kdir * 2600 * dt; pvx *= .86; px += pvx * dt; } else pvx *= .8;
+    px = Math.max(40, Math.min(W - 40, px));
+    // spawn – faster as time runs out
+    spawnT -= dt;
+    if (spawnT <= 0) {
+      spawnT = .55 - (30 - timeLeft) * .011;
+      const roll = Math.random();
+      const type = roll < .08 ? 'mint' : roll < .32 ? 'coral' : 'gold';
+      items.push({ x: 20 + Math.random() * (W - 40), y: -20, vy: 140 + Math.random() * 120 + (30 - timeLeft) * 6, rot: Math.random() * 6, vr: (Math.random() - .5) * 6, type, r: type === 'mint' ? 13 : 12 });
+    }
+    // update
+    const py = H - 34;
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i]; it.y += it.vy * dt; it.rot += it.vr * dt;
+      if (it.y > py - 12 && it.y < py + 14 && Math.abs(it.x - px) < 46) {
+        const col = it.type === 'gold' ? '#ffcf3f' : it.type === 'mint' ? '#4df0c4' : '#ff5d73';
+        if (it.type === 'gold') { score += 1; blip(700 + Math.random() * 200, .06, 'square', .03); }
+        if (it.type === 'mint') { score += 5; blip(1200, .12, 'triangle', .05, 400); }
+        if (it.type === 'coral') { score = Math.max(0, score - 3); shake = 10; blip(110, .2, 'sawtooth', .05, -50); }
+        burst(it.x, py, col, it.type === 'mint' ? 24 : 12);
+        scoreEl.textContent = score; items.splice(i, 1); continue;
+      }
+      if (it.y > H + 30) items.splice(i, 1);
+    }
+    for (let i = parts.length - 1; i >= 0; i--) { const p = parts[i]; p.x += p.vx; p.y += p.vy; p.vy += .15; p.life -= .03; if (p.life <= 0) parts.splice(i, 1); }
+    // draw
+    x.save();
+    if (shake > .5 && !reduced) { x.translate((Math.random() - .5) * shake, (Math.random() - .5) * shake); shake *= .85; }
+    x.clearRect(-20, -20, W + 40, H + 40);
+    // floor grid
+    x.strokeStyle = 'rgba(150,160,230,.07)'; x.lineWidth = 1;
+    for (let gx = 0; gx < W; gx += 40) { x.beginPath(); x.moveTo(gx, 0); x.lineTo(gx, H); x.stroke(); }
+    for (const it of items) {
+      const col = it.type === 'gold' ? '#ffcf3f' : it.type === 'mint' ? '#4df0c4' : '#ff5d73';
+      if (it.type === 'mint') { x.shadowColor = col; x.shadowBlur = 16; }
+      tri(it.x, it.y, it.r, it.rot, col); x.shadowBlur = 0;
+      if (it.type === 'coral') { x.strokeStyle = '#0a0c16'; x.lineWidth = 2; x.beginPath(); x.moveTo(it.x - 4, it.y - 4); x.lineTo(it.x + 4, it.y + 4); x.moveTo(it.x + 4, it.y - 4); x.lineTo(it.x - 4, it.y + 4); x.stroke(); }
+    }
+    for (const p of parts) { x.globalAlpha = p.life; tri(p.x, p.y, 4, p.life * 6, p.color); }
+    x.globalAlpha = 1;
+    // catcher
+    x.fillStyle = '#4df0c4'; x.beginPath();
+    x.moveTo(px - 46, py - 8); x.lineTo(px + 46, py - 8); x.lineTo(px + 30, py + 10); x.lineTo(px - 30, py + 10); x.closePath(); x.fill();
+    x.fillStyle = 'rgba(77,240,196,.15)'; x.fillRect(px - 46, py + 14, 92, 4);
+    x.restore();
+    requestAnimationFrame(step);
+  }
+  const movePtr = e => { if (!playing) return; const r = cv.getBoundingClientRect(); px = e.clientX - r.left; };
+  cv.addEventListener('pointermove', movePtr);
+  cv.addEventListener('pointerdown', movePtr);
+  addEventListener('keydown', e => {
+    if (!playing) return;
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (['ArrowLeft', 'ArrowRight', 'a', 'd'].includes(k)) { keys[k] = true; e.preventDefault(); }
+  });
+  addEventListener('keyup', e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; keys[k] = false; });
+  $('#gStart').addEventListener('click', start);
+  addEventListener('resize', size);
+  size();
+  window.__game = { start };
+})();
+
+/* ================= CONTACT ================= */
+$('#copyMail').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText('jchen548@asu.edu'); toast('Email copied', 'jchen548@asu.edu is on your clipboard.', 'info'); }
+  catch { location.href = 'mailto:jchen548@asu.edu'; }
+  blip(900, .08);
+});
+$('#msgForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const subj = encodeURIComponent(`Portfolio message from ${f.get('name')}`);
+  location.href = `mailto:jchen548@asu.edu?subject=${subj}&body=${encodeURIComponent(f.get('msg'))}`;
+  toast('Opening your mail app', 'Your message is drafted and ready to send.', 'info');
+});
+
+/* ================= KONAMI ================= */
+const code = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+let kpos = 0;
+addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea')) return;
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  kpos = k === code[kpos] ? kpos + 1 : (k === code[0] ? 1 : 0);
+  if (kpos === code.length) {
+    kpos = 0; const on = mesh.toggleWire(); mesh.flashAll();
+    toast(on ? 'Debug view ON' : 'Debug view OFF', 'Enter the code again to toggle.', 'info');
+    unlock('konami');
+  }
+});
+
+/* ================= CONSOLE ================= */
+const con = $('#console'), out = $('#con-out'), cin = $('#con-in');
+let hist = [], hpos = 0, prevFocus = null;
+function print(t, cls = '') { const d = document.createElement('div'); if (cls) d.className = cls; d.textContent = t; out.appendChild(d); out.scrollTop = out.scrollHeight; }
+function openCon() { prevFocus = document.activeElement; con.classList.add('open'); cin.focus(); if (!out.childElementCount) print('JerryOS v1.0 · type "help" for commands'); }
+function closeCon() { con.classList.remove('open'); cin.blur(); if (prevFocus && prevFocus.focus) prevFocus.focus(); }
+const go = id => { document.getElementById(id).scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' }); };
+const CMDS = {
+  help: () => 'commands: about · levels · skills · quests · play · contact · achievements · wire · sfx · goto <section> · clear · exit',
+  about: () => { go('character'); return 'Jerry Chen. Game design student at ASU, class of 2027. Builds in Unity & UE5. Believes everything is triangles.'; },
+  levels: () => { go('levels'); return LEVELS.filter(l => !l.locked).map(l => `  [${l.no}] ${l.title}`).join('\n'); },
+  skills: () => { go('inventory'); return ITEMS.map(i => `  ${i.n.padEnd(16)} ${i.r}`).join('\n'); },
+  quests: () => { go('quests'); return 'opening quest log…'; },
+  play: () => { go('bonus'); setTimeout(() => window.__game.start(), 700); closeCon(); return 'launching Triangle Rain…'; },
+  contact: () => { go('coop'); return 'email: jchen548@asu.edu\nitch:  itch.io/profile/shadowleafing'; },
+  achievements: () => ACH.map(a => `  ${got.has(a.id) ? '[x]' : '[ ]'} ${got.has(a.id) ? a.name : '???'}`).join('\n'),
+  wire: () => `debug view ${mesh.toggleWire() ? 'ON' : 'OFF'}`,
+  sfx: () => { sfxBtn.click(); return `sfx ${sfxOn ? 'on' : 'off'}`; },
+  goto: a => { const ids = sections.map(s => s.id); if (!ids.includes(a)) return `usage: goto ${ids.join('|')}`; go(a); return `→ ${a}`; },
+  clear: () => { out.innerHTML = ''; return null; },
+  exit: () => { closeCon(); return null; },
+  sudo: a => a === 'hire jerry' ? '✔ excellent choice. permission granted. → jchen548@asu.edu' : 'nice try. (hint: sudo hire jerry)',
+  quit: () => 'there is no quitting.',
+  triangle: () => '      ▲\n     ▲ ▲\n    ▲ ▲ ▲\n   ▲ ▲ ▲ ▲',
+  ls: () => 'character/  levels/  inventory/  quests/  bonus/  coop/  secrets.txt',
+  'cat': a => a === 'secrets.txt' ? 'try: sudo hire jerry · triangle · the konami code' : `cat: ${a || '?'}: no such file`,
+};
+cin.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { e.preventDefault(); closeCon(); return; }
+  if (e.key === 'ArrowUp') { e.preventDefault(); if (hpos > 0) cin.value = hist[--hpos]; return; }
+  if (e.key === 'ArrowDown') { e.preventDefault(); hpos = Math.min(hist.length, hpos + 1); cin.value = hist[hpos] || ''; return; }
+  if (e.key !== 'Enter') return;
+  const raw = cin.value.trim(); cin.value = ''; if (!raw) return;
+  hist.push(raw); hpos = hist.length;
+  print('> ' + raw, 'me');
+  const [cmd, ...rest] = raw.split(/\s+/); const fn = CMDS[cmd.toLowerCase()];
+  if (!fn) { print(`unknown command: ${cmd}. try "help"`, 'err'); blip(140, .12, 'sawtooth', .03); return; }
+  const r = fn(rest.join(' ')); if (r) print(r);
+  blip(600, .04, 'square', .02); unlock('console');
+});
+addEventListener('keydown', e => {
+  if (!booted || e.target.matches('input,textarea')) return;
+  if (e.key === '`' || e.key === '~') { e.preventDefault(); con.classList.contains('open') ? closeCon() : openCon(); }
+});
+
+paintAch();
+paintXP();
+})();
+</script>
+</body>
+</html>
