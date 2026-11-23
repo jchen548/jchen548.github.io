@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Feature Page</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <h1 class="logo">A Feature Page</h1>
+    <button id="menu-btn" class="menu-btn">☰</button>
+    <nav id="nav-menu" class="hidden">
+      <a href="#about">About</a>
+      <a href="#projects">Projects</a>
+      <a href="#todo">To-Do</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h2 id="greeting">Hello!</h2>
+      <p>Welcome to my week 6 webpage</p>
+      <button id="theme-btn" class="btn">Switch to dark mode</button>
+    </section>
+
+    <section id="about">
+      <h2>About Me</h2>
+      <p>
+        I'm Jerry, a game design student at ASU. This is for my project in AME 220.
+      </p>
+    </section>
+
+    <section id="projects">
+      <h2>Projects</h2>
+      <div class="cards">
+        <div class="card" data-info="A top-down bullet heaven built with Unity ECS.">
+          <h3>Depths of Corruption</h3>
+          <p>Unity</p>
+        </div>
+        <div class="card" data-info="A fast momentum shooter where you fight your way down through a city.">
+          <h3>Terminal Floor</h3>
+          <p>Unreal Engine 5</p>
+        </div>
+        <div class="card" data-info="A Unity editor tool for building Monument Valley style levels with impossible paths.">
+          <h3>MV Level Kit</h3>
+          <p>Unity Editor Tool</p>
+        </div>
+      </div>
+      <p id="project-info">Hover over a project to learn more.</p>
+    </section>
+
+    <section id="todo">
+      <h2>Dev To-Do List</h2>
+      <div class="todo-input-row">
+        <input type="text" id="todo-input" placeholder="Add a task...">
+        <button id="add-btn" class="btn">Add</button>
+      </div>
+      <p id="input-hint" class="hint hidden">Press Enter or click Add. Click a task to cross it off.</p>
+      <ul id="todo-list"></ul>
+    </section>
+  </main>
+
+
+  <script src="script.js"></script>
+</body>
+</html>
